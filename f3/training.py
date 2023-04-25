@@ -5,7 +5,7 @@ import torch.utils.data
 import torchmetrics
 from tqdm.autonotebook import tqdm
 
-from ffo import datasets
+from f3 import datasets
 
 
 def train_batch(model, optimizer, index, data, target, loss_function, delayed_error_info=None,

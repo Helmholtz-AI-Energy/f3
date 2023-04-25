@@ -6,14 +6,14 @@ import uuid
 import pandas
 import torch
 
-from ffo import training, ffo_models, datasets
+from f3 import training, f3_models, datasets
 
 
 def create_model(depth, width, input_size, output_size, mode, initialization_method, scalar, discrete_values,
                  regression):
-    return ffo_models.fc_model(depth=depth, width=width, input_size=input_size, output_size=output_size, mode=mode,
-                               regression=regression, initialization_method=initialization_method, scalar=scalar,
-                               discrete_values=discrete_values)
+    return f3_models.fc_model(depth=depth, width=width, input_size=input_size, output_size=output_size, mode=mode,
+                              regression=regression, initialization_method=initialization_method, scalar=scalar,
+                              discrete_values=discrete_values)
 
 
 def train_model(model, dataset, device, epochs, batch_size, test_batch_size, lr, dry_run, log_interval, print_eval,
@@ -57,12 +57,12 @@ def save_results(dataframe, output_name, output_path):
 def parse_args(**kwargs):
     parser = argparse.ArgumentParser()
 
-    # model arguments: depth, width, ffo, initialization_method, scalar, discrete_values
+    # model arguments: depth, width, f3, initialization_method, scalar, discrete_values
     parser.add_argument("--depth", type=int, help="The model depth")
     parser.add_argument("--width", type=int, help="The model width = number of neurons in the FC layers")
     parser.add_argument("--model", type=str, help="The model name, alternative to specifying depth and width.",
                         choices=["fc1_500", "fc2_500", "fc1_1000", "fc2_1000"])
-    parser.add_argument("--mode", type=str, default="ffo", choices=["ffo", "bp", "llo"], help="The training mode.")
+    parser.add_argument("--mode", type=str, default="f3", choices=["f3", "bp", "llo"], help="The training mode.")
     parser.add_argument("--initialization_method", type=str, default='kaiming_uniform',
                         choices=['constant', 'alternate_negative', 'chunked_negative', 'discrete_uniform',
                                  'cartesian_product', 'kaiming_uniform', 'kaiming_uniform_repeat_line',
@@ -95,7 +95,7 @@ def parse_args(**kwargs):
                         choices=["one_hot_target", "zeros", "delayed_loss", "delayed_error", "delayed_loss_one_hot",
                                  "delayed_error_one_hot", "delayed_loss_softmax", "delayed_error_softmax",
                                  'current_error'],
-                        help="Which error information to use for FFO training.")
+                        help="Which error information to use for F³ training.")
 
     # output arguments: output_name, output_path
     parser.add_argument('--no_output', action='store_true')
@@ -130,7 +130,7 @@ if __name__ == '__main__':
         assert config.depth is not None and config.width is not None
         model = create_model(config.depth, config.width, **model_kwargs)
     else:
-        model_creator = getattr(ffo_models, config.model)
+        model_creator = getattr(f3_models, config.model)
         model = model_creator(**model_kwargs)
     print(model)
     results = train_model(model, config.dataset, config.device, config.epochs, config.batch_size,

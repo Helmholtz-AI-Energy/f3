@@ -1,9 +1,9 @@
-# Feed-Forward-Only Training of Neural Networks
+# Feed-Forward Optimization With Delayed Feedback for Neural Networks
 
-Feed-Forward-Only (FFO) is a novel, biologically-inspired algorithm to train neural networks without backpropagation.
+**F**eed-**F**orward with delayed **F**eedback (F³) is a novel, biologically-inspired algorithm to train neural networks without backpropagation.
 It solves the weight transport and update locking problems, two of backpropagation's core issues prohibiting biological plausibility.
 
-This repository implements training and evaluating FFO for fully-connected neural networks on different classification and regression datasets.
+This repository implements training and evaluating F³ for fully-connected neural networks on different classification and regression datasets.
 
 ## Installation
 
@@ -47,9 +47,9 @@ We used the following hyperparameters:
 - algorithms
   - Backpropagation: `--mode bp`
   - Shallow Learning: `--mode llo`
-  - DFA: `--mode ffo --error_info current_error`
-  - DRTP: `--mode ffo --error_info one_hot_target`
-  - FFO: `--mode ffo --error_info <error information>` with error information being one of: `delayed_loss`, `delayed_error`, `delayed_loss_one_hot`, `delayed_error_one_hot`, `delayed_loss_softmax`, `delayed_error_softmax`
+  - DFA: `--mode f3 --error_info current_error`
+  - DRTP: `--mode f3 --error_info one_hot_target`
+  - F³: `--mode f3 --error_info <error information>` with error information being one of: `delayed_loss`, `delayed_error`, `delayed_loss_one_hot`, `delayed_error_one_hot`, `delayed_loss_softmax`, `delayed_error_softmax`
 - initializations
   - Kaiming: `--initialization_method kaiming_uniform`
   - Trinomial: `--initialization_method discrete_uniform --scalar 1 --discrete_values -1 0 1`
@@ -58,7 +58,7 @@ We used the following hyperparameters:
 - model: `--depth <depth> --width <width>` where the depth is the number of hidden layers in a fully-connected neural network and the width is the number of neurons in these hidden layers
 - learning rate: `--lr <learning rate>` with the learning rates given in Table TODO
 
-For example, to reproduce training a network with one hidden layer with 500 neurons on MNIST with FFO-Error and trinomial initialization of the feedback weights with seed 0 you would call
+For example, to reproduce training a network with one hidden layer with 500 neurons on MNIST with F³-Error and trinomial initialization of the feedback weights with seed 0 you would call
 ```
-python start_training.py --seed 0 --depth 1 --width 500 --epochs 100 --dataset mnist --batch_size 50 --mode ffo --error_info delayed_error_one_hot --initialization_method discrete_uniform --scalar 1 --discrete_values -1 0 1 --lr 0.001
+python start_training.py --seed 0 --depth 1 --width 500 --epochs 100 --dataset mnist --batch_size 50 --mode f3 --error_info delayed_error_one_hot --initialization_method discrete_uniform --scalar 1 --discrete_values -1 0 1 --lr 0.001
 ```

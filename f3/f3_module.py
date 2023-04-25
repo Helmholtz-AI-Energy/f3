@@ -6,43 +6,43 @@ import torch
 import torch.nn as nn
 
 
-class FFOConnection(torch.autograd.Function):
+class F3Connection(torch.autograd.Function):
     """
-    An autograd function implementing the FFO computation by detaching the input and replacing the gradient inbetween
+    An autograd function implementing the F³ computation by detaching the input and replacing the gradient inbetween
     module blocks.
     """
 
     @staticmethod
-    def forward(ctx, input, ffo_gradient):
+    def forward(ctx, input, f3_gradient):
         """
-        Receives an input and it's FFO gradient. Saves the gradient and returns the detached input (inplace).
-        :param ctx: A context to store tensors and variables for the backward pass. Used to store the FFO gradient.
+        Receives an input and it's F³ gradient. Saves the gradient and returns the detached input (inplace).
+        :param ctx: A context to store tensors and variables for the backward pass. Used to store the F³ gradient.
         :param input: The input to the function.
-        :param ffo_gradient: The precomputed FFO gradient, will be returned as gradient in backward.
+        :param f3_gradient: The precomputed F³ gradient, will be returned as gradient in backward.
         :return: The input but detached.
         """
-        if ffo_gradient is not None:
-            ctx.save_for_backward(ffo_gradient.view(input.shape))
+        if f3_gradient is not None:
+            ctx.save_for_backward(f3_gradient.view(input.shape))
         return input.detach()
 
     @staticmethod
     def backward(ctx, *grad_outputs):
         """
-        Returns the precomputed FFO gradient passed to forward as gradient of the input.
-        :param ctx: A context to store tensors and variables for the backward pass. Used to load the FFO gradient.
-        :param grad_output: The gradient of the output of this function, unused in FFO.
-        :return: The FFO gradient passed to the forward function.
+        Returns the precomputed F³ gradient passed to forward as gradient of the input.
+        :param ctx: A context to store tensors and variables for the backward pass. Used to load the F³ gradient.
+        :param grad_output: The gradient of the output of this function, unused in F³.
+        :return: The F³ gradient passed to the forward function.
         """
-        ffo_gradient, = ctx.saved_tensors
-        return ffo_gradient, None
+        f3_gradient, = ctx.saved_tensors
+        return f3_gradient, None
 
 
-class FFOConnector(nn.Module):
+class F3Connector(nn.Module):
     """
     A module to detach the input and replace the gradient inbetween module blocks.
-    Holds the fixed feedback weights B as a buffer and computes the FFO gradient by multiplying the error information
-    with these feedback weights. In training mode, the FFO gradient is computed in the forward pass and saved for the
-    backward pass using the FFOConnection autograd function. In eval mode, the connector has essentially no effect.
+    Holds the fixed feedback weights B as a buffer and computes the F³ gradient by multiplying the error information
+    with these feedback weights. In training mode, the F³ gradient is computed in the forward pass and saved for the
+    backward pass using the F3Connection autograd function. In eval mode, the connector has essentially no effect.
     """
 
     def __init__(self, model_output_size):
@@ -50,7 +50,7 @@ class FFOConnector(nn.Module):
         Create a connector module.
         :param model_output_size: Output size of the model, e.g. number of classes.
         """
-        super(FFOConnector, self).__init__()
+        super(F3Connector, self).__init__()
         self.model_output_size = model_output_size
 
     @staticmethod
@@ -122,47 +122,47 @@ class FFOConnector(nn.Module):
         elif initialization_method == 'kaiming_uniform_repeat_line':
             column = torch.empty((model_output_size, 1))
             nn.init.kaiming_uniform_(column, a=math.sqrt(5))
-            tensor = FFOConnector.__initialize_fill_with_repeat(tensor, column)
+            tensor = F3Connector.__initialize_fill_with_repeat(tensor, column)
         elif initialization_method == 'identity_fill_zero':
             torch.nn.init.eye_(tensor)
         elif initialization_method == 'identity_repeat':
             eye = torch.eye(model_output_size)
-            tensor = FFOConnector.__initialize_fill_with_repeat(tensor, eye)
+            tensor = F3Connector.__initialize_fill_with_repeat(tensor, eye)
         elif initialization_method == 'identity_repeat_pm':
             pm_eye = torch.eye(model_output_size).repeat(1, 2)
             pm_eye[:, model_output_size:] *= -1
-            tensor = FFOConnector.__initialize_fill_with_repeat(tensor, pm_eye)
+            tensor = F3Connector.__initialize_fill_with_repeat(tensor, pm_eye)
         else:
             raise ValueError(f'Invalid initialization method {initialization_method}.')
         return tensor
 
     def reset_feedback_weights(self, initialization_method='kaiming_uniform', scalar=None, discrete_values=None):
-        raise NotImplementedError('Please use a sub-class of FFOConnector which implements the gradient approximation.')
+        raise NotImplementedError('Please use a sub-class of F3Connector which implements the gradient approximation.')
 
-    def compute_ffo_gradient(self, error_information, input):
-        raise NotImplementedError('Please use a sub-class of FFOConnector which implements the gradient approximation.')
+    def compute_f3_gradient(self, error_information, input):
+        raise NotImplementedError('Please use a sub-class of F3Connector which implements the gradient approximation.')
 
     def forward(self, input, error_information):
         """
-        Compute the FFO gradient based on the error information and passes both to the FFOConnection function, which
-        detaches the input and saves the FFO gradient to be returned by the backward function.
+        Compute the F³ gradient based on the error information and passes both to the F3Connection function, which
+        detaches the input and saves the F³ gradient to be returned by the backward function.
         :param input: The input to the layer (i.e. an intermediate result returned by the previous block and passed to
         the next block after the connector).
         :param error_information: The error information of the current batch.
         :return: The detached input.
         """
-        ffo_gradient = None
+        f3_gradient = None
         if self.training:
-            ffo_gradient = self.compute_ffo_gradient(error_information, input)
-        return FFOConnection.apply(input, ffo_gradient)
+            f3_gradient = self.compute_f3_gradient(error_information, input)
+        return F3Connection.apply(input, f3_gradient)
 
 
-class FFOConnectorFC(FFOConnector):
+class F3ConnectorFC(F3Connector):
     """
     A module to detach the input and replace the gradient inbetween module blocks.
-    Holds the fixed feedback weights B as a buffer and computes the FFO gradient by multiplying the error information
-    with these feedback weights. In training mode, the FFO gradient is computed in the forward pass and saved for the
-    backward pass using the FFOConnection autograd function. In eval mode, the connector has essentially no effect.
+    Holds the fixed feedback weights B as a buffer and computes the F³ gradient by multiplying the error information
+    with these feedback weights. In training mode, the F³ gradient is computed in the forward pass and saved for the
+    backward pass using the F3Connection autograd function. In eval mode, the connector has essentially no effect.
     """
 
     def __init__(self, input_size, model_output_size, device=None, dtype=None, initialization_method='kaiming_uniform',
@@ -179,7 +179,7 @@ class FFOConnectorFC(FFOConnector):
         :param discrete_values: Additional parameters to the initialization method.
         """
         factory_kwargs = {'device': device, 'dtype': dtype}
-        super(FFOConnectorFC, self).__init__(model_output_size)
+        super(F3ConnectorFC, self).__init__(model_output_size)
         feedback_weight = torch.empty(torch.Size([model_output_size, np.prod(input_size)]), **factory_kwargs)
         self.register_buffer('feedback_weight', feedback_weight)
         self.reset_feedback_weights(initialization_method, scalar, discrete_values)
@@ -188,41 +188,41 @@ class FFOConnectorFC(FFOConnector):
         self.feedback_weight = self.initialize_values(self.feedback_weight, initialization_method, scalar,
                                                       discrete_values)
 
-    def compute_ffo_gradient(self, error_information, input):
+    def compute_f3_gradient(self, error_information, input):
         """
-        Compute the FFO gradient by multiplying the feedback weights with the error information.
+        Compute the F³ gradient by multiplying the feedback weights with the error information.
         :param error_information: The error information of the current batch.
         :param input: Input to the connector, i.e. output of the previous layers forward pass.
-        :return: The FFO gradient approximation.
+        :return: The F³ gradient approximation.
         """
         return error_information.mm(self.feedback_weight)
 
 
-class FFOModule(nn.Module):
+class F3Module(nn.Module):
     """
-    An FFO module taking a list of (sequential) submodules and building an FFO model by interspersing these blocks with
-    FFO connectors, disconnecting the autograd graph and substituting the gradients with approximate gradients based on
+    An F³ module taking a list of (sequential) submodules and building an F³ model by interspersing these blocks with
+    F³ connectors, disconnecting the autograd graph and substituting the gradients with approximate gradients based on
     fixed random feedback weights and additional error information passed to the forward pass.
     The submodule blocks are treated as a black box and could be anything from single layers to complex modules.
     """
 
     def __init__(self, blocks, block_output_sizes, connector_types=None, **kwargs):
         """
-        Create an FFO module, interspersing the given blocks with FFO connectors.
+        Create an F³ module, interspersing the given blocks with F³ connectors.
         :param blocks: The submodules composing this module (in sequential order).
         :param block_output_sizes: The output sizes of the blocks (int or iterable), used to determine the size of the
         feedback weights.
-        :param connector_types: List of FFOConnector subclass and corresponding kwargs to the init method. Contains n-1
+        :param connector_types: List of F3Connector subclass and corresponding kwargs to the init method. Contains n-1
         such tuples for n blocks.
         """
-        super(FFOModule, self).__init__()
+        super(F3Module, self).__init__()
         self.blocks = blocks
 
         # create connector modules inbetween all blocks
         model_output_size = block_output_sizes[-1]
-        connector_types = [(FFOConnectorFC, {})] * (
+        connector_types = [(F3ConnectorFC, {})] * (
                     len(block_output_sizes) - 1) if connector_types is None else connector_types
-        connector_types = [(FFOConnectorFC, {}) if connector_type is None else connector_type
+        connector_types = [(F3ConnectorFC, {}) if connector_type is None else connector_type
                            for connector_type in connector_types]
         self.connectors = [
             connector(in_features, model_output_size, **specific_kwargs, **kwargs)
@@ -239,9 +239,9 @@ class FFOModule(nn.Module):
     def forward(self, x, error_information):
         """
         Pass the input x forward through the blocks, detaching the intermediate results inbetween all blocks and
-        precomputing the FFO gradients (when in training mode) using the FFO connectors.
+        precomputing the F³ gradients (when in training mode) using the F³ connectors.
         :param x: The input x to pass through the network.
-        :param error_information: The error information used to compute the FFO gradients, e.g. the delayed error from
+        :param error_information: The error information used to compute the F³ gradients, e.g. the delayed error from
         the previous epoch, the targets y,...
         :return: The output of model(x).
         """
@@ -252,14 +252,14 @@ class FFOModule(nn.Module):
 
     @staticmethod
     def get_connector_by_name(name):
-        connectors = {'fc': FFOConnectorFC, }
+        connectors = {'fc': F3ConnectorFC, }
         if name not in connectors:
             raise ValueError(f'Invalid connector {name}. Valid options are: {connectors.keys()}')
         return connectors[name]
 
 
 class BPModule(nn.Module):
-    """Same usage as the FFO module but uses standard BP for training."""
+    """Same usage as the F³ module but uses standard BP for training."""
 
     def __init__(self, blocks, block_output_sizes=None):
         super(BPModule, self).__init__()

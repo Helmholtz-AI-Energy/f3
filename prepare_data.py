@@ -1,5 +1,5 @@
 import argparse
-import ffo.datasets as datasets
+import f3.datasets as datasets
 
 if __name__ == '__main__':
     # arguments to select which datasets are prepared
