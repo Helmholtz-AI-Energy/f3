@@ -44,19 +44,3 @@ def fc_model(depth, width, input_size, output_size=10, mode='f3', regression=Fal
               for i, (in_features, out_features) in enumerate(zip(sizes, sizes[1:]))]
 
     return build_module(mode, blocks, sizes[1:], **kwargs)
-
-
-def fc1_500(input_size, output_size=10, mode='f3', regression=False, **kwargs):
-    return fc_model(1, 500, input_size, output_size, mode, regression, **kwargs)
-
-
-def fc2_500(input_size, output_size=10, mode='f3', regression=False, **kwargs):
-    return fc_model(2, 500, input_size, output_size, mode, regression, **kwargs)
-
-
-def fc1_1000(input_size, output_size=10, mode='f3', regression=False, **kwargs):
-    return fc_model(1, 1000, input_size, output_size, mode, regression, **kwargs)
-
-
-def fc2_1000(input_size, output_size=10, mode='f3', regression=False, **kwargs):
-    return fc_model(2, 1000, input_size, output_size, mode, regression, **kwargs)

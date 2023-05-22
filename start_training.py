@@ -60,8 +60,6 @@ def parse_args(**kwargs):
     # model arguments: depth, width, f3, initialization_method, scalar, discrete_values
     parser.add_argument("--depth", type=int, help="The model depth")
     parser.add_argument("--width", type=int, help="The model width = number of neurons in the FC layers")
-    parser.add_argument("--model", type=str, help="The model name, alternative to specifying depth and width.",
-                        choices=["fc1_500", "fc2_500", "fc1_1000", "fc2_1000"])
     parser.add_argument("--mode", type=str, default="f3", choices=["f3", "bp", "llo"], help="The training mode.")
     parser.add_argument("--initialization_method", type=str, default='kaiming_uniform',
                         choices=['constant', 'alternate_negative', 'chunked_negative', 'discrete_uniform',
