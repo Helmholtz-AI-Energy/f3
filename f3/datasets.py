@@ -172,6 +172,115 @@ class CensusIncome(torch.utils.data.Dataset):
         return [path / file_name for file_name in cls.IN_FILES_DEFAULT_NAME]
 
 
+class WineQuality(torch.utils.data.Dataset):
+    """
+    Torch dataset for the wine quality dataset from UCI
+    https://archive.ics.uci.edu/ml/datasets/Wine+Quality
+    """
+    URL = 'https://archive.ics.uci.edu/ml/machine-learning-databases/wine-quality/'
+    DATA_SUBDIR = 'wine_quality'
+    IN_FILES_DEFAULT_NAME = ['winequality-red.csv', 'winequality-white.csv']
+    TRAIN_FILE = 'wine_quality/train.csv'
+    TEST_FILE = 'wine_quality/test.csv'
+
+    FEATURE_MEAN = torch.tensor([7.218837791033289, 0.3406147777563979, 0.31793534731575906, 5.407129112949779,
+                                 0.0563923417356167, 30.5420434866269, 115.37088705022128, 0.9946949942274388,
+                                 3.218785837983452, 0.5324995189532423, 10.49694118401642, 0.7494708485664806])
+    FEATURE_STD = torch.tensor([1.295744632728374, 0.16478221261798476, 0.1451796332799575, 4.7194721844136795,
+                                0.03548156287322057, 17.876643878598543, 56.604784167835156, 0.0029904908199930046,
+                                0.16036887247044962, 0.150201578211253, 1.1897982752321445, 0.43335947206804276])
+    TARGET_MEAN = 5.825476236290167
+    TARGET_STD = 0.8781308165686595
+
+    def __init__(self, root='data/', train=True, transform=None, target_transform=None, red=True, white=True,
+                 int_target=False, normalize=True):
+        self.train = train
+        self.transform = transform
+        self.target_transform = target_transform
+
+        file_path = pathlib.Path(root) / (self.TRAIN_FILE if train else self.TEST_FILE)
+        self.dataframe = pandas.read_csv(file_path)
+
+        selected_colors = [color for color in ['red' if red else None, 'white' if white else None] if color is not None]
+        self.dataframe = self.dataframe[self.dataframe.color.isin(selected_colors)]
+        self.dataframe.color = self.dataframe.color.astype('category').cat.codes
+        self.dataframe = self.dataframe.convert_dtypes()
+        self.dataframe.reset_index(inplace=True, drop=True)
+
+        self.x = self.dataframe.loc[:, self.dataframe.columns != 'quality']
+        self.y = self.dataframe[['quality']]
+
+        self.x = torch.tensor(self.x.to_numpy(dtype='float32'))
+        self.y = torch.tensor(self.y.to_numpy(dtype='int64'))
+        self.y = self.y.squeeze().to(torch.int64) if int_target else self.y.float()
+
+        if normalize:
+            self.x = (self.x - self.FEATURE_MEAN[None, :]) / self.FEATURE_STD[None, :]
+            if not int_target:
+                self.y = (self.y - self.TARGET_MEAN) / self.TARGET_STD
+
+    def __len__(self):
+        return len(self.y)
+
+    def __getitem__(self, index):
+        x, y = self.x[index], self.y[index]
+        if self.transform:
+            x = self.transform(x)
+        if self.target_transform:
+            y = self.target_transform(y)
+        return x, y
+
+    @property
+    def targets(self):
+        return self.y
+
+    @classmethod
+    def prepare_data(cls, in_file_red=None, in_file_white=None, root='data', test_size=0.2, random_state=1,
+                     split_kwargs=None, download=True):
+        root = pathlib.Path(root)
+        (root / cls.DATA_SUBDIR).mkdir(parents=True, exist_ok=True)
+
+        in_files = [default if custom is None else custom
+                    for default, custom in zip(cls.IN_FILES_DEFAULT_NAME, [in_file_red, in_file_white])]
+        in_files = [root / cls.DATA_SUBDIR / file for file in in_files]
+
+        # Download
+        if not all(file.exists() for file in in_files):
+            if download:
+                in_files = cls.download(root)
+            else:
+                raise FileNotFoundError(f'In files {[file for file in in_files if not file.exists()]} not found. '
+                                        'Pass download=True to download them automatically from the UCI directory.')
+
+        # Read data and combine red and white
+        red_data, white_data = [pandas.read_csv(path, sep=';') for path in in_files]
+        red_data['color'] = 'red'
+        white_data['color'] = 'white'
+        data = pandas.concat([red_data, white_data])
+
+        # Train test spilt
+        split_kwargs = {} if split_kwargs is None else split_kwargs
+        train_data, test_data = train_test_split(data, test_size=test_size, random_state=random_state, **split_kwargs)
+
+        # Save results
+        train_data.to_csv(root / cls.TRAIN_FILE, index=False)
+        test_data.to_csv(root / cls.TEST_FILE, index=False)
+
+    @classmethod
+    def download(cls, root='data'):
+        # download data from URL and extract to root/DATA_SUBDIR
+        root = pathlib.Path(root)
+        path = root / cls.DATA_SUBDIR
+        path.mkdir(parents=True, exist_ok=True)
+
+        for file_name in cls.IN_FILES_DEFAULT_NAME:
+            http_response = urllib.request.urlopen(cls.URL + '/' + file_name)
+            with open(path / file_name, 'wb') as file:
+                file.write(http_response.read())
+
+        return [path / file_name for file_name in cls.IN_FILES_DEFAULT_NAME]
+
+
 class UCIDataset(torch.utils.data.Dataset):
     """Torch dataset for UCI datasets stored in a csv"""
     COLUMNS = None
@@ -412,6 +521,21 @@ def sgemm_data_loaders(batch_size, test_batch_size, root, **data_loader_kwargs):
     return data_loaders(train_data, test_data, batch_size, test_batch_size, **data_loader_kwargs)
 
 
+def wine_quality_regression_data_loaders(batch_size, test_batch_size, root, **data_loader_kwargs):
+    train_data = WineQuality(root, train=True, transform=None, target_transform=None, int_target=False)
+    test_data = WineQuality(root, train=False, transform=None, target_transform=None, int_target=False)
+    return data_loaders(train_data, test_data, batch_size, test_batch_size, **data_loader_kwargs)
+
+
+def wine_quality_classification_data_loaders(batch_size, test_batch_size, root, **data_loader_kwargs):
+    num_classes = 11
+    target_transform = torchvision.transforms.Compose([lambda target: one_hot(target, num_classes).float()])
+
+    train_data = WineQuality(root, train=True, transform=None, target_transform=target_transform, int_target=True)
+    test_data = WineQuality(root, train=False, transform=None, target_transform=target_transform, int_target=True)
+    return data_loaders(train_data, test_data, batch_size, test_batch_size, **data_loader_kwargs)
+
+
 def get_dataset_config(dataset):
     configs = {
         'mnist': {'input_size': [1, 28, 28], 'output_size': 10, 'loss': binary_cross_entropy,
@@ -426,6 +550,10 @@ def get_dataset_config(dataset):
                           'classification_target': 'one_hot', 'is_regression': False},
         'sgemm': {'input_size': 14, 'output_size': 1, 'loss': mse_loss,
                   'classification_target': None, 'is_regression': True},
+        'wine_quality_regression': {'input_size': 12, 'output_size': 1, 'loss': mse_loss,
+                                    'classification_target': None, 'is_regression': True},
+        'wine_quality_classification': {'input_size': 12, 'output_size': 11, 'loss': binary_cross_entropy,
+                                        'classification_target': 'one_hot', 'is_regression': False},
     }
     if dataset not in configs:
         raise ValueError(f'Invalid dataset {dataset}. Valid datasets are: {configs.keys()}')
@@ -445,5 +573,9 @@ def get_data_loaders(dataset, batch_size, test_batch_size, root='data', **data_l
         return census_income_data_loaders(batch_size, test_batch_size, root, **data_loader_kwargs)
     elif dataset == 'sgemm':
         return sgemm_data_loaders(batch_size, test_batch_size, root, **data_loader_kwargs)
+    elif dataset == 'wine_quality_regression':
+        return wine_quality_regression_data_loaders(batch_size, test_batch_size, root, **data_loader_kwargs)
+    elif dataset == 'wine_quality_classification':
+        return wine_quality_classification_data_loaders(batch_size, test_batch_size, root, **data_loader_kwargs)
     else:
         raise ValueError(f'Invalid dataset {dataset}.')

@@ -77,7 +77,8 @@ def parse_args(**kwargs):
     #                     eval_every_nth_batch, error_info
     parser.add_argument("--device", type=str, default="cuda", help="The torch device to train on")
     parser.add_argument("--dataset", type=str, default="mnist", help="The dataset to train on",
-                        choices=['mnist', 'cifar10', 'susy', 'kdd', 'sgemm', 'census_income'])
+                        choices=['mnist', 'cifar10', 'susy', 'kdd', 'sgemm', 'census_income', 'wine_quality_regression',
+                                 'wine_quality_classification'])
     parser.add_argument("--epochs", type=int, required=True, help="The number of epochs to train")
     parser.add_argument("--batch_size", type=int, default=50, help="The batch size")
     parser.add_argument("--test_batch_size", type=int, default=1000, help="The test batch size")

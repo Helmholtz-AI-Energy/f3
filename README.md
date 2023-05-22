@@ -41,9 +41,9 @@ We used the following hyperparameters:
 - seeds: `--seed <seed>` with seeds from 1 to 10
 - datasets
   - MNIST: `--dataset mnist --batch_size 50 --epochs 100`
-  - CIFAR-10: `--dataset cifar10 --batch_size 100 --epochs 200`
-  - Census Income: `--dataset census_income --batch_size 100 --epochs 100`
   - SGEMM: `--dataset sgemm --batch_size 512 --epochs 200`
+  - CIFAR-10: `--dataset cifar10 --batch_size 100 --epochs 200`
+  - Wine Quality: `--dataset wine_quality_regression --batch_size 50 --epochs 500`
 - algorithms
   - Backpropagation: `--mode bp`
   - Shallow Learning: `--mode llo`

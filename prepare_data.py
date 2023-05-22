@@ -8,6 +8,7 @@ if __name__ == '__main__':
     parser.add_argument('--sgemm', action='store_true', help='Download and prepare the SGEMM dataset.')
     parser.add_argument('--susy', action='store_true', help='Download and prepare the SUSY dataset.')
     parser.add_argument('--kdd', action='store_true', help='Download and prepare the KDDCup99 dataset.')
+    parser.add_argument('--wine_quality', action='store_true', help='Download and prepare the Wine Quality dataset.')
     args = parser.parse_args()
 
     # download and prepare the selected datasets for training
@@ -23,3 +24,6 @@ if __name__ == '__main__':
     if args.kdd:
         print('Preparing KDDCup99 data')
         datasets.KDDCup99.prepare_train_test_split()
+    if args.wine_quality:
+        print('Preparing Wine Quality data')
+        datasets.WineQuality.prepare_data()
