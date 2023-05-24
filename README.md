@@ -62,3 +62,9 @@ For example, to reproduce training a network with one hidden layer with 500 neur
 ```
 python start_training.py --seed 0 --depth 1 --width 500 --epochs 100 --dataset mnist --batch_size 50 --mode f3 --error_info delayed_error_one_hot --initialization_method discrete_uniform --scalar 1 --discrete_values -1 0 1 --lr 0.001
 ```
+
+#### Transformer Proof-of-Concept
+To run the transformer training, use
+```
+python transformer.py <seed>
+```
