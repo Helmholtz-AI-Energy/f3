@@ -125,12 +125,12 @@ if __name__ == '__main__':
         'scalar': config.scalar,
         'discrete_values': config.discrete_values,
     }
-    if config.model is None:
-        assert config.depth is not None and config.width is not None
-        model = create_model(config.depth, config.width, **model_kwargs)
-    else:
-        model_creator = getattr(f3_models, config.model)
-        model = model_creator(**model_kwargs)
+    # if config.model is None:
+    assert config.depth is not None and config.width is not None
+    model = create_model(config.depth, config.width, **model_kwargs)
+    # else:
+    #     model_creator = getattr(f3_models, config.model)
+    #     model = model_creator(**model_kwargs)
     print(model)
     results = train_model(model, config.dataset, config.device, config.epochs, config.batch_size,
                           config.test_batch_size, config.lr, config.dry_run, config.log_interval, config.print_eval,
