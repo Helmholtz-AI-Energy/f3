@@ -56,7 +56,15 @@ We used the following hyperparameters:
   - Binomial: `--initialization_method discrete_uniform --scalar 1 --discrete_values 0 1`
   - ±I: `--initialization_method identity_repeat_pm`
 - model: `--depth <depth> --width <width>` where the depth is the number of hidden layers in a fully-connected neural network and the width is the number of neurons in these hidden layers
-- learning rate: `--lr <learning rate>` with the learning rates given in Table TODO
+- learning rate: `--lr <learning rate>` with the learning rates given in the following table
+
+| Dataset      |      BP |     LLO |     DFA |    DRTP |      F3 |
+|:-------------|--------:|--------:|--------:|--------:|--------:|
+| MNIST        | 1.5e-04 | 1.5e-02 | 1.5e-04 | 1.5e-04 | 1.5e-04 |
+| Wine Quality | 1.0e-04 | 1.0e-04 | 1.0e-04 | 1.0e-04 | 1.0e-04 |
+| SGEMM d=1    | 1.0e-02 | 1.0e-02 | 1.0e-04 | 1.0e-04 | 1.0e-04 |
+| SGEMM d=2    | 1.0e-03 | 1.0e-03 | 1.0e-05 | 1.0e-05 | 1.0e-05 |
+| SGEMM d≥10   | 1.0e-04 | 1.0e-04 | 1.0e-05 | 1.0e-05 | 1.0e-05 |
 
 For example, to reproduce training a network with one hidden layer with 500 neurons on MNIST with F³-Error and trinomial initialization of the feedback weights with seed 0 you would call
 ```
